@@ -38,34 +38,31 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
 
     @Override
     public Map<String, Object> handleRequest(Object request, Context context) {
-        // Retrieve the bucket name from environment variable
         String bucketName = System.getenv("BUCKET_NAME");
-        
-        // Generate 10 random UUIDs
+        context.getLogger().log("Bucket Name: " + bucketName);
+
         List<String> uuidList = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             uuidList.add(UUID.randomUUID().toString());
         }
-        
-        // Create a filename with the ISO time of execution
+
         String fileName = Instant.now().toString() + ".json";
-        
-        // Create JSON content for the file
         String fileContent;
         try {
             fileContent = objectMapper.writeValueAsString(Map.of("ids", uuidList));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to convert UUID list to JSON", e);
         }
-        
-        // Upload the file to S3
+
+        context.getLogger().log("File Content: " + fileContent);
+
         s3Client.putObject(new PutObjectRequest(bucketName, fileName, fileContent));
-        
-        // Return response
+        context.getLogger().log("File uploaded: " + fileName);
+
         Map<String, Object> resultMap = new HashMap<>();
         resultMap.put("statusCode", 200);
         resultMap.put("body", "File " + fileName + " uploaded successfully.");
-        
+
         return resultMap;
     }
 }

@@ -19,8 +19,8 @@
             "lambda:InvokeFunction"
           ],
           "Effect": "Allow",
-          "Resource":  ["arn:aws:s3:::uuid-storage",
-            "arn:aws:s3:::uuid-storage/*",
+          "Resource":  [  "arn:aws:s3:::cmtr-3663a088-uuid-storage-test",
+          "arn:aws:s3:::cmtr-3663a088-uuid-storage-test/*",
             "arn:aws:lambda:eu-central-1:905418349556:function:cmtr-3663a088-uuid_generator-test" ]
         }
       ],
