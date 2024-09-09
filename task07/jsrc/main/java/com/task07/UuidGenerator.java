@@ -10,6 +10,8 @@ import com.syndicate.deployment.annotations.environment.EnvironmentVariables;
 import com.syndicate.deployment.annotations.events.RuleEventSource;
 import com.syndicate.deployment.annotations.lambda.LambdaHandler;
 import com.syndicate.deployment.model.RetentionSetting;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,11 +33,14 @@ import java.util.UUID;
 })
 public class UuidGenerator implements RequestHandler<Object, Map<String, Object>> {
 
-    private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-    private final String BUCKET_NAME = "uuid-storage";
+	private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public Map<String, Object> handleRequest(Object request, Context context) {
+        // Retrieve the bucket name from environment variable
+        String bucketName = System.getenv("BUCKET_NAME");
+        
         // Generate 10 random UUIDs
         List<String> uuidList = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
@@ -46,10 +51,15 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
         String fileName = Instant.now().toString() + ".json";
         
         // Create JSON content for the file
-        String fileContent = "{\"ids\": " + uuidList.toString() + "}";
+        String fileContent;
+        try {
+            fileContent = objectMapper.writeValueAsString(Map.of("ids", uuidList));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to convert UUID list to JSON", e);
+        }
         
         // Upload the file to S3
-        s3Client.putObject(new PutObjectRequest(BUCKET_NAME, fileName, fileContent));
+        s3Client.putObject(new PutObjectRequest(bucketName, fileName, fileContent));
         
         // Return response
         Map<String, Object> resultMap = new HashMap<>();
