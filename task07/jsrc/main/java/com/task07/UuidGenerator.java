@@ -13,6 +13,8 @@ import com.syndicate.deployment.model.RetentionSetting;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,7 +58,8 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
 
         context.getLogger().log("File Content: " + fileContent);
 
-        s3Client.putObject(new PutObjectRequest(bucketName, fileName, fileContent));
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));
+        s3Client.putObject(new PutObjectRequest(bucketName, fileName, inputStream, null));
         context.getLogger().log("File uploaded: " + fileName);
 
         Map<String, Object> resultMap = new HashMap<>();
