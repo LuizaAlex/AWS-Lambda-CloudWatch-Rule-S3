@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,9 +26,9 @@ import java.util.UUID;
 
 @LambdaHandler(
     lambdaName = "uuid_generator",
-	roleName = "uuid_generator-role",
-	isPublishVersion = false,
-	logsExpiration = RetentionSetting.SYNDICATE_ALIASES_SPECIFIED
+    roleName = "uuid_generator-role",
+    isPublishVersion = false,
+    logsExpiration = RetentionSetting.SYNDICATE_ALIASES_SPECIFIED
 )
 
 @RuleEventSource(targetRule = "uuid_trigger")
@@ -36,9 +37,10 @@ import java.util.UUID;
 })
 public class UuidGenerator implements RequestHandler<Object, Map<String, Object>> {
 
-	private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+  
+    private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
 
     @Override
     public Map<String, Object> handleRequest(Object request, Context context) {
@@ -50,7 +52,7 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
             uuidList.add(UUID.randomUUID().toString());
         }
 
-        String fileName = Instant.now().atZone(java.time.ZoneOffset.UTC).format(formatter);
+        String fileName = formatter.format(Instant.now()) + ".json";
         String fileContent;
         try {
             fileContent = objectMapper.writeValueAsString(Map.of("ids", uuidList));
@@ -60,7 +62,8 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
 
         context.getLogger().log("File Content: " + fileContent);
 
-        s3Client.putObject(new PutObjectRequest(bucketName, fileName, fileContent));
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));
+        s3Client.putObject(new PutObjectRequest(bucketName, fileName, inputStream, null));
         context.getLogger().log("File uploaded: " + fileName);
 
         Map<String, Object> resultMap = new HashMap<>();
