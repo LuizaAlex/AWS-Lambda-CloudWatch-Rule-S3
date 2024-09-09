@@ -38,7 +38,7 @@ import java.util.UUID;
 public class UuidGenerator implements RequestHandler<Object, Map<String, Object>> {
 
   
-    private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+	private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
 
@@ -52,7 +52,8 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
             uuidList.add(UUID.randomUUID().toString());
         }
 
-        String fileName = formatter.format(Instant.now()) + ".json";
+        // Ensure filename matches the required timestamp format without extension
+        String fileName = formatter.format(Instant.now());
         String fileContent;
         try {
             fileContent = objectMapper.writeValueAsString(Map.of("ids", uuidList));
