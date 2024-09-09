@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
 
 	private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
     @Override
     public Map<String, Object> handleRequest(Object request, Context context) {
@@ -48,7 +50,7 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
             uuidList.add(UUID.randomUUID().toString());
         }
 
-        String fileName = Instant.now().toString() + ".json";
+        String fileName = Instant.now().atZone(java.time.ZoneOffset.UTC).format(formatter);
         String fileContent;
         try {
             fileContent = objectMapper.writeValueAsString(Map.of("ids", uuidList));
@@ -58,8 +60,7 @@ public class UuidGenerator implements RequestHandler<Object, Map<String, Object>
 
         context.getLogger().log("File Content: " + fileContent);
 
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));
-        s3Client.putObject(new PutObjectRequest(bucketName, fileName, inputStream, null));
+        s3Client.putObject(new PutObjectRequest(bucketName, fileName, fileContent));
         context.getLogger().log("File uploaded: " + fileName);
 
         Map<String, Object> resultMap = new HashMap<>();
