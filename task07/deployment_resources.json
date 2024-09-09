@@ -15,11 +15,13 @@
             "events:PutTargets",
             "events:DescribeRule",
             "events:ListRules",
-            "events:RemoveTargets"
+            "events:RemoveTargets",
+            "lambda:InvokeFunction"
           ],
           "Effect": "Allow",
           "Resource":  ["arn:aws:s3:::uuid-storage",
-            "arn:aws:s3:::uuid-storage/*" ]
+            "arn:aws:s3:::uuid-storage/*",
+            "arn:aws:lambda:eu-central-1:905418349556:function:cmtr-3663a088-uuid_generator-test" ]
         }
       ],
       "Version": "2012-10-17"
